@@ -23,10 +23,10 @@ public class FilterBySpecification {
                 List<Predicate> predicate = new ArrayList<>();
 
                 if(filterRequest.getBrand() != null)
-                    predicate.add(criteriaBuilder.equal(root.get("brand"), filterRequest.getBrand()));
+                    predicate.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("brand")), filterRequest.getBrand().toLowerCase()));
                 
                 if(filterRequest.getCategory() != null)
-                    predicate.add(criteriaBuilder.equal(root.get("category"), filterRequest.getCategory()));
+                    predicate.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("category")), filterRequest.getCategory().toLowerCase()));
 
                 if(filterRequest.getMaxPrice() != null)
                     predicate.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), filterRequest.getMaxPrice()));
@@ -39,4 +39,41 @@ public class FilterBySpecification {
             
         };
     }
+
+    public static Specification<Product> searchWithFilter(String key, FilterRequest filterRequest){
+        return new Specification<Product>(){
+
+            @Override
+            public Predicate toPredicate(Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+            
+                List<Predicate> predicates = new ArrayList<>();
+
+                predicates.add(
+                    criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + key.toLowerCase() + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("brand")), "%" + key.toLowerCase() + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), "%" + key.toLowerCase() + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("category")), "%" + key.toLowerCase() + "%")
+                ));
+
+                if(filterRequest != null){
+
+                    if(filterRequest.getBrand() != null)
+                        predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("brand")), filterRequest.getBrand().toLowerCase()));
+                    
+                    if(filterRequest.getCategory() != null)
+                        predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("category")), filterRequest.getCategory().toLowerCase()));
+
+                    if(filterRequest.getMaxPrice() != null)
+                        predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), filterRequest.getMaxPrice()));
+
+                    if(filterRequest.getMinPrice() != null)
+                        predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), filterRequest.getMinPrice()));
+                }
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            }
+
+        };
+    }
+
 }
