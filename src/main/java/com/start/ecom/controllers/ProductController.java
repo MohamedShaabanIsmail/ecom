@@ -22,68 +22,43 @@ import com.start.ecom.services.ProductService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
 @RestController
 @CrossOrigin
 @RequestMapping("/api")
-@Tag(name = "Product Management", description = "API endpoints for managing e-commerce products")
 public class ProductController {
 
     @Autowired
     private ProductService services;
 
-    @GetMapping("/products")
-    @Operation(summary = "Get all products", description = "Retrieve a paginated list of all products with optional filtering")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved products", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPage.class))),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-    })
-    public ResponseEntity<ProductPage> getAllProducts(
-            @Parameter(description = "Page number (1-indexed)", example = "1") @RequestParam(required = false, defaultValue = "1") int pageNum,
-            @Parameter(description = "Number of products per page", example = "5") @RequestParam(required = false, defaultValue = "5") int pageSize,
+    @PostMapping("/products")
+    public ResponseEntity<ProductPage> getAllProducts( @RequestParam(required = false, defaultValue = "1") int pageNum, 
+    @RequestParam(required = false, defaultValue = "8") int pageSize,
             @RequestParam(required = false, defaultValue = "id") String sort,
-            @RequestParam(required = false, defaultValue = "desc") String order,
-            @Parameter(description = "Filter criteria for products") @RequestBody(required = false) FilterRequest filterRequest) {
+             @RequestParam(required = false, defaultValue = "desc") String order, 
+            @RequestBody(required = false) FilterRequest filterRequest) {
 
         Sort direction = order.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending();
-        return ResponseEntity.ok().body(services.getAllProducts(PageRequest.of(pageNum - 1, pageSize, direction), filterRequest));
+        return ResponseEntity.ok().body(services.getAllProducts(PageRequest.of(pageNum , pageSize, direction), filterRequest));
     }
 
     @PostMapping("/product")
-    @Operation(summary = "Create a new product", description = "Add a new product with image upload")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Product created successfully"),
-            @ApiResponse(responseCode = "500", description = "Failed to create product")
-    })
-    public ResponseEntity<?> addProduct(
-            @Parameter(description = "Product details") @RequestPart Product product,
-            @Parameter(description = "Product image file") @RequestPart MultipartFile imageFile) {
+    public ResponseEntity<?> addProduct(@RequestPart Product product, @RequestPart MultipartFile imageFile
+        ) {
 
         try {
             Product productCreated = services.product(product, imageFile);
             return new ResponseEntity<>(productCreated, HttpStatus.CREATED);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @GetMapping("/product/{id}")
-    @Operation(summary = "Get product by ID", description = "Retrieve a specific product by its unique identifier")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product found successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
-    public ResponseEntity<Product> getProductsById(
-            @Parameter(description = "Product ID", example = "1") @PathVariable int id) {
+    public ResponseEntity<Product> getProductsById(@PathVariable int id) {
         Product product = services.getProductsById(id);
         if (product != null)
             return new ResponseEntity<>(product, HttpStatus.OK);
@@ -92,45 +67,26 @@ public class ProductController {
     }
 
     @GetMapping("/product/{id}/image")
-    @Operation(summary = "Get product image", description = "Retrieve the image for a specific product")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Image retrieved successfully", content = @Content(mediaType = "image/*")),
-            @ApiResponse(responseCode = "404", description = "Product or image not found")
-    })
-    public ResponseEntity<byte[]> getImage(
-            @Parameter(description = "Product ID", example = "1") @PathVariable int id) { 
+    public ResponseEntity<byte[]> getImage(@PathVariable int id) { 
         Product prod = services.getProductsById(id);
         return ResponseEntity.ok().contentType(MediaType.valueOf(prod.getImageType())).body(prod.getImageData());
     }
 
-    @GetMapping("/products/search")
-    @Operation(summary = "Search products", description = "Search for products by keyword (searches in name, description, and brand)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Search results found", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductPage.class))),
-            @ApiResponse(responseCode = "404", description = "No products found matching the keyword")
-    })
-    public ResponseEntity<ProductPage> search(
-            @Parameter(description = "Search keyword", example = "Nike") @RequestParam String keyword,
-            @Parameter(description = "Page number (1-indexed)", example = "1") @RequestParam(required = false, defaultValue = "1") int pageNum,
-            @Parameter(description = "Number of products per page", example = "5") @RequestParam(required = false, defaultValue = "5") int pageSize,
+    @PostMapping("/products/search")
+    public ResponseEntity<ProductPage> search(@RequestParam String keyword, @RequestParam(required = false, defaultValue = "1") int pageNum,
+            @RequestParam(required = false, defaultValue = "8") int pageSize,
             @RequestParam(required = false, defaultValue = "id") String sort,
             @RequestParam(required = false, defaultValue = "desc") String order,
-            @Parameter(description = "Filter criteria for products") @RequestBody(required = false) FilterRequest filterRequest) 
+            @RequestBody(required = false) FilterRequest filterRequest) 
             {
         
         Sort direction = order.equalsIgnoreCase("desc") ? Sort.by(sort).descending() : Sort.by(sort).ascending();
-        ProductPage products = services.getProductsbyKey(keyword, PageRequest.of(pageNum - 1, pageSize, direction), filterRequest);
+        ProductPage products = services.getProductsbyKey(keyword, PageRequest.of(pageNum , pageSize, direction), filterRequest);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
     @DeleteMapping("/product/{id}")
-    @Operation(summary = "Delete product by ID", description = "Delete a specific product by its unique identifier")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found")
-    })
-    public ResponseEntity<Void> deleteProduct(
-            @Parameter(description = "Product ID", example = "1") @PathVariable int id) {
+    public ResponseEntity<Void> deleteProduct( @PathVariable int id) {
         boolean deleted = services.deleteProduct(id);
         if (deleted) {
             return new ResponseEntity<>(HttpStatus.OK);
@@ -140,16 +96,8 @@ public class ProductController {
     }
 
     @PutMapping("/product/{id}")
-    @Operation(summary = "Update product by ID", description = "Update the details of a specific product by its unique identifier")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Product updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Product not found"),
-            @ApiResponse(responseCode = "500", description = "Failed to update product")
-    })
-    public ResponseEntity<?> updateProduct(
-            @Parameter(description = "Product ID", example = "1") @PathVariable int id,
-            @Parameter(description = "Updated product details") @RequestPart Product updatedProduct,
-            @Parameter(description = "Updated product image") @RequestPart MultipartFile imageFile) {
+    public ResponseEntity<?> updateProduct( @PathVariable int id, @RequestPart Product updatedProduct,
+            @RequestPart MultipartFile imageFile) {
         try {
             Product product = services.updateProduct(id, updatedProduct, imageFile);
             if (product != null) {

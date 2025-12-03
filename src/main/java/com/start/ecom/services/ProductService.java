@@ -21,6 +21,9 @@ public class ProductService {
     @Autowired
     private ProductRepo repo;
 
+    @Autowired
+    private OptionService optionService;
+
     private ProductPage pagenation(Page<Product> pages){
         ProductPage productPage = new ProductPage(pages.getContent(),
                 pages.getTotalPages(),
@@ -45,26 +48,33 @@ public class ProductService {
     }
 
     //when return null value cache throws error
-    @Cacheable(value = "my_products", key = "#id")
+//    @Cacheable(value = "my_products", key = "#id")
     public Product getProductsById(int id) {
         System.out.println("Fetching from DB for id: " + id);
         return repo.findById(id).orElse(null);
     }
 
-    @CachePut(value = "my_products", key = "#product.id")
+//    @CachePut(value = "my_products", key = "#product.id")
     public Product product(Product product, MultipartFile image) throws IOException {
+
         product.setImageName(image.getOriginalFilename());
         product.setImageType(image.getContentType());
         product.setImageData(image.getBytes());
-        System.out.println("Added to cache for id: " + product.getId());
-        return repo.save(product);
+        Product savedProduct = repo.save(product);
+
+        savedProduct.getOptions().forEach(option -> {
+            option.setProduct(savedProduct);
+            optionService.addOption(option);
+        });
+        
+        return savedProduct;
     }
 
     public ProductPage getProductsbyKey(String key, PageRequest pageRequest,FilterRequest filterRequest) {
         return pagenation(repo.findAll(FilterBySpecification.searchWithFilter(key, filterRequest), pageRequest));
     }
 
-    @CacheEvict(value = "my_products", key = "#id")
+//    @CacheEvict(value = "my_products", key = "#id")
     public boolean deleteProduct(int id) {
         if (repo.existsById(id)) {
             repo.deleteById(id);
