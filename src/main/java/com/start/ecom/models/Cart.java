@@ -2,6 +2,8 @@ package com.start.ecom.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +30,7 @@ public class Cart {
     @OneToOne
     private Users user;
     
+    @JsonManagedReference
     @OneToMany(mappedBy = "cart",cascade = CascadeType.REMOVE)
     private List<CartItem> items; 
 

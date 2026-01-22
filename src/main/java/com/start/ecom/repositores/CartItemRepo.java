@@ -7,5 +7,7 @@ import com.start.ecom.models.CartItem;
 
 @Repository
 public interface CartItemRepo extends JpaRepository<CartItem, Integer> {
+
+    void deleteAllByCartId(int cartid);
     
 }

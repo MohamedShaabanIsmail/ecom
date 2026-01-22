@@ -2,6 +2,8 @@ package com.start.ecom.models;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -27,6 +29,7 @@ public class CartItem {
     private Product product;
     
     @ManyToOne
+    @JsonBackReference
     @JoinColumn(name = "cart_id")
     private Cart cart;
 

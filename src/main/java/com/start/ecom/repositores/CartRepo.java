@@ -11,4 +11,5 @@ import com.start.ecom.models.Cart;
 public interface CartRepo extends JpaRepository<Cart, Integer> {
 
     public Optional<Cart> findByUserId(int user_id);
+
 }

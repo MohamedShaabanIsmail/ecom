@@ -27,7 +27,9 @@ public class CartService {
     private UserRepo userRepo;
 
     public Cart getCartByUserId(int user_id) {
-        return cartRepo.findByUserId(user_id).orElse(null);
+        Cart cart = cartRepo.findByUserId(user_id).orElse(null);
+        System.out.println("user id in service: " + user_id + " cart: " + cart);
+        return cart;
     }
     
     public void addItemToCart(CartItemDto item) throws Exception {
@@ -38,11 +40,6 @@ public class CartService {
         cartItem.setSelectedOption(item.getSelectedOption());
         itemRepo.save(cartItem);
     }
-
-    // public Cart updateCart(int id, Cart cart) {
-    //     // TODO Auto-generated method stub
-    //     throw new UnsupportedOperationException("Unimplemented method 'updateCart'");
-    // }
 
     public CartItem updateCartItem(int id, CartItem item) {
         return itemRepo.findById(id).map(saved -> {
@@ -63,6 +60,10 @@ public class CartService {
     public void create(Cart cart) throws Exception {
         userRepo.findById(cart.getUser().getId()).orElseThrow(() -> new Exception("User not found"));
         cartRepo.save(cart);
+    }
+
+    public void clearCart(int cartid){
+        itemRepo.deleteAllByCartId(cartid);
     }
 
     public CartItem getItem(int id) {
